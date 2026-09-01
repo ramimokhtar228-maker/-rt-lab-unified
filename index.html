@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RT LAB — النظام الموحّد</title>
+<meta name="theme-color" content="#800000">
+<style>
+:root { --primary:#800000; --secondary:#1a237e; --bg:#f0f2f5; --card:#fff; --text:#1e293b; --muted:#64748b; --border:#e2e8f0; --danger:#dc2626; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'Segoe UI',Tahoma,Arial,sans-serif; background:var(--bg); color:var(--text); direction:rtl; min-height:100vh; }
+#loginScreen {
+  position:fixed; inset:0; z-index:99;
+  background:linear-gradient(135deg,var(--primary),var(--secondary));
+  display:flex; align-items:center; justify-content:center;
+}
+.login-card {
+  background:#fff; border-radius:16px; padding:32px 28px; width:400px; max-width:94vw;
+  box-shadow:0 20px 50px rgba(0,0,0,.25); text-align:center;
+}
+.login-card h1 { color:var(--primary); font-size:28px; font-weight:900; margin-bottom:4px; }
+.login-card .sub { color:var(--muted); font-size:13px; margin-bottom:18px; }
+.login-card label { display:block; text-align:right; font-size:12px; font-weight:700; color:#475569; margin-bottom:4px; }
+.login-card select, .login-card input {
+  width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:8px;
+  margin-bottom:12px; font-size:14px; font-family:inherit;
+}
+.login-card button {
+  width:100%; padding:12px; border:0; border-radius:8px; background:var(--secondary);
+  color:#fff; font-weight:800; font-size:15px; cursor:pointer;
+}
+.login-hint { font-size:11px; color:#94a3b8; margin-top:10px; }
+#app { display:none; max-width:960px; margin:0 auto; padding:20px 16px 40px; }
+#app.show { display:block; }
+.top { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:10px; }
+.brand { font-weight:900; color:var(--primary); font-size:22px; }
+.brand span { font-size:12px; color:var(--muted); font-weight:600; }
+.btn { border:0; border-radius:8px; padding:8px 14px; font-weight:700; cursor:pointer; font-family:inherit; font-size:13px; }
+.btn-out { background:var(--danger); color:#fff; }
+.hero {
+  background:linear-gradient(135deg,var(--primary),var(--secondary)); color:#fff;
+  border-radius:16px; padding:24px; margin-bottom:20px;
+}
+.hero h2 { font-size:22px; font-weight:900; margin-bottom:6px; }
+.hero p { opacity:.93; font-size:14px; line-height:1.5; }
+.note {
+  background:#ecfdf5; border:1px solid #6ee7b7; color:#065f46;
+  border-radius:10px; padding:12px 14px; font-size:13px; margin-bottom:16px; line-height:1.6;
+}
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
+.card {
+  background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px 14px;
+  text-align:center; text-decoration:none; color:inherit; display:block;
+  box-shadow:0 2px 8px rgba(0,0,0,.04); transition:.15s;
+}
+.card:hover { transform:translateY(-3px); box-shadow:0 8px 20px rgba(128,0,0,.12); }
+.card .ico { font-size:30px; margin-bottom:8px; }
+.card h3 { font-size:14px; font-weight:800; margin-bottom:4px; }
+.card p { font-size:12px; color:var(--muted); line-height:1.4; }
+.card.book { border-top:3px solid #9f1239; }
+.card.lis { border-top:3px solid var(--primary); }
+.gtitle {
+  font-size:14px; font-weight:800; color:var(--primary); margin:16px 0 10px;
+  padding-bottom:6px; border-bottom:2px solid #fecdd3;
+}
+.links { margin-top:20px; font-size:12px; color:var(--muted); line-height:1.8; }
+.links a { color:var(--secondary); }
+</style>
+</head>
+<body>
+<div id="loginScreen">
+  <div class="login-card">
+    <h1>RT LAB</h1>
+    <div class="sub">النظام الموحّد — حجوزات · نتائج · مخزون</div>
+    <label>المستخدم</label>
+    <select id="loginUser">
+      <option value="Rami Mokhtar|Admin">Rami Mokhtar (Admin)</option>
+      <option value="Rehab Ali|Lab Manager">Rehab Ali (Lab Manager)</option>
+      <option value="RT LAB|Staff">RT LAB (Staff)</option>
+    </select>
+    <label>كلمة المرور</label>
+    <input type="password" id="loginPass" placeholder="كلمة المرور">
+    <button type="button" id="btnLogin">دخول</button>
+    <div class="login-hint">Rami → rami2026 · Rehab → rehab2026 · RT LAB → rtlab2026</div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="top">
+    <div class="brand">RT LAB <span id="uName"></span></div>
+    <button type="button" class="btn btn-out" id="btnOut">خروج</button>
+  </div>
+
+  <div class="hero">
+    <h2>بوابة RT LAB</h2>
+    <p>اضغط البطاقة لفتح القسم في صفحة كاملة. كل الملفات يجب أن تكون في نفس مجلد الاستضافة.</p>
+  </div>
+
+  <div class="note">
+    إذا ظهر 404: تأكد أن الملفات <b>lis.html</b> و <b>booking.html</b> مرفوعة بنفس هذه الأسماء بدون أرقام إضافية من ويندوز.
+  </div>
+
+  <div class="gtitle">🌐 الحجوزات والعضويات</div>
+  <div class="grid">
+    <a class="card book" href="booking.html?view=public&tab=lab">
+      <div class="ico">🧪</div><h3>حجز موعد تحاليل</h3><p>روشتة · موعد · زيارة منزلية</p>
+    </a>
+    <a class="card book" href="booking.html?view=public&tab=mem">
+      <div class="ico">💳</div><h3>طلب كارت عضوية</h3><p>الباقات ونقاط الولاء</p>
+    </a>
+    <a class="card book" href="booking.html?view=public&tab=portal">
+      <div class="ico">🔎</div><h3>نتيجتي وكارتي</h3><p>استعلام النتيجة</p>
+    </a>
+    <a class="card book" href="booking.html?view=admin">
+      <div class="ico">🔐</div><h3>إدارة الحجوزات</h3><p>تسعير · تأكيد · تقارير</p>
+    </a>
+  </div>
+
+  <div class="gtitle">🔬 المختبر والنتائج</div>
+  <div class="grid">
+    <a class="card lis" href="lis.html">
+      <div class="ico">🔬</div><h3>برنامج النتايج (LIS)</h3><p>مرضى · نتائج · تقارير · مخزون</p>
+    </a>
+  </div>
+
+  <div class="links">
+    روابط احتياطية (نفس الملفات بأسماء طويلة):<br>
+    <a href="RT_LAB_BOOKING_FULL.html">RT_LAB_BOOKING_FULL.html</a> ·
+    <a href="RT_LAB_LIS_FULL.html">RT_LAB_LIS_FULL.html</a>
+  </div>
+  <div class="links" style="margin-top:12px">
+    <a href="v2/index.html">مركز RT LAB V2 (نتائج · تقرير · بوابة · AI · إدارة)</a>
+  </div>
+</div>
+
+<script>
+(function(){
+  const PASS = {'Rami Mokhtar':'rami2026','Rehab Ali':'rehab2026','RT LAB':'rtlab2026'};
+  function enter(u){
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('app').classList.add('show');
+    document.getElementById('uName').textContent = '— ' + u;
+  }
+  document.getElementById('btnLogin').onclick = function(){
+    const raw = document.getElementById('loginUser').value;
+    const name = raw.split('|')[0];
+    const pass = document.getElementById('loginPass').value;
+    if(PASS[name] !== pass){ alert('كلمة المرور غير صحيحة'); return; }
+    try{ sessionStorage.setItem('rt_u', name); }catch(e){}
+    enter(name);
+  };
+  document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('btnLogin').click(); });
+  document.getElementById('btnOut').onclick = function(){ try{ sessionStorage.removeItem('rt_u'); }catch(e){} location.reload(); };
+  try{ const s=sessionStorage.getItem('rt_u'); if(s) enter(s); }catch(e){}
+})();
+</script>
+</body>
+</html>
