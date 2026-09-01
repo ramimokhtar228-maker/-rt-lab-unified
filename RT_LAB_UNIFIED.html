@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RT LAB — النظام الموحّد</title>
+<meta name="theme-color" content="#800000">
+<meta name="rt-lis-file" content="RT_LAB_LIS_FULL.html">
+<meta name="rt-booking-file" content="RT_LAB_BOOKING_FULL.html">
+<style>
+:root {
+  --primary: #800000; --secondary: #1a237e; --bg: #f0f2f5; --card: #fff;
+  --text: #1e293b; --muted: #64748b; --border: #e2e8f0; --danger: #dc2626; --sidebar: #1e1e2d;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', Tahoma, 'Cairo', Arial, sans-serif;
+  background: var(--bg); color: var(--text); direction: rtl; min-height: 100vh;
+}
+#loginScreen {
+  position: fixed; inset: 0; z-index: 9999;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  display: flex; align-items: center; justify-content: center;
+}
+.login-card {
+  background: #fff; border-radius: 16px; padding: 32px 28px; width: 400px; max-width: 94vw;
+  box-shadow: 0 20px 50px rgba(0,0,0,.25); text-align: center;
+}
+.login-card h1 { color: var(--primary); font-size: 28px; font-weight: 900; margin-bottom: 4px; }
+.login-card .sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+.login-card label { display: block; text-align: right; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px; }
+.login-card select, .login-card input {
+  width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 8px;
+  margin-bottom: 12px; font-size: 14px; font-family: inherit;
+}
+.login-card button {
+  width: 100%; padding: 12px; border: 0; border-radius: 8px; background: var(--secondary);
+  color: #fff; font-weight: 800; font-size: 15px; cursor: pointer; margin-top: 6px;
+}
+.login-hint { font-size: 11px; color: #94a3b8; margin-top: 10px; }
+
+#appShell { display: none; min-height: 100vh; flex-direction: column; }
+#appShell.show { display: flex; }
+
+.topbar {
+  height: 56px; background: var(--card); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; padding: 0 16px;
+  position: sticky; top: 0; z-index: 20;
+}
+.topbar .brand { font-weight: 900; color: var(--primary); font-size: 18px; }
+.topbar .brand span { font-size: 12px; color: var(--muted); font-weight: 600; margin-right: 8px; }
+.topbar .user-area { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.role-badge { background: #f8e8e8; color: var(--primary); padding: 3px 10px; border-radius: 20px; font-weight: 800; font-size: 11px; }
+.btn-sm { border: 0; border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.btn-out { background: var(--danger); color: #fff; }
+
+.body-row { display: flex; flex: 1; min-height: calc(100vh - 56px); }
+.sidenav {
+  width: 250px; background: var(--sidebar); color: #e2e8f0; flex-shrink: 0;
+  display: flex; flex-direction: column; overflow-y: auto;
+}
+.sidenav .nav-section { font-size: 10px; font-weight: 800; color: #64748b; padding: 14px 16px 6px; }
+.sidenav a.nav-item, .sidenav button.nav-item {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  background: transparent; border: 0; border-right: 3px solid transparent;
+  color: #cbd5e1; padding: 11px 16px; text-align: right; cursor: pointer;
+  font-size: 13px; font-weight: 600; font-family: inherit; text-decoration: none;
+}
+.sidenav a.nav-item:hover, .sidenav button.nav-item:hover { background: #2b2b40; color: #fff; }
+.sidenav .ico { font-size: 16px; width: 22px; text-align: center; }
+.sidenav .nav-footer { margin-top: auto; padding: 12px 16px; font-size: 11px; color: #64748b; border-top: 1px solid #333; }
+
+.main-area { flex: 1; overflow-y: auto; padding: 24px; }
+.hub-hero {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: #fff; border-radius: 16px; padding: 28px 24px; margin-bottom: 22px;
+}
+.hub-hero h2 { font-size: 24px; font-weight: 900; margin-bottom: 6px; }
+.hub-hero p { opacity: .92; font-size: 14px; }
+.hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+.hub-card {
+  background: var(--card); border-radius: 14px; padding: 20px 16px;
+  border: 1px solid var(--border); cursor: pointer; transition: .18s;
+  text-align: center; text-decoration: none; color: inherit; display: block;
+}
+.hub-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(128,0,0,.12); border-color: #fecdd3; }
+.hub-card .ico { font-size: 32px; margin-bottom: 10px; }
+.hub-card h3 { font-size: 15px; font-weight: 800; margin-bottom: 4px; color: var(--text); }
+.hub-card p { font-size: 12px; color: var(--muted); line-height: 1.45; }
+.hub-card.book { border-top: 3px solid #9f1239; }
+.hub-card.lis { border-top: 3px solid var(--primary); }
+.hub-card.ops { border-top: 3px solid var(--secondary); }
+.hub-card.hr { border-top: 3px solid #059669; }
+.group-title {
+  font-size: 14px; font-weight: 800; color: var(--primary); margin: 18px 0 10px;
+  padding-bottom: 6px; border-bottom: 2px solid #fecdd3;
+}
+.note {
+  background: #ecfdf5; border: 1px solid #6ee7b7; color: #065f46;
+  border-radius: 10px; padding: 12px 14px; font-size: 13px; margin-bottom: 16px; line-height: 1.6;
+}
+@media (max-width: 800px) {
+  .sidenav { display: none; }
+  .sidenav.mobile-open {
+    display: flex; position: fixed; inset: 56px 0 0 auto; width: 80%; max-width: 280px; z-index: 50;
+  }
+  .main-area { padding: 14px; }
+}
+.menu-toggle { display: none; background: #f1f5f9; border: 0; border-radius: 6px; padding: 6px 10px; font-size: 16px; cursor: pointer; }
+@media (max-width: 800px) { .menu-toggle { display: inline-block; } }
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-card">
+    <h1>RT LAB</h1>
+    <div class="sub">النظام الموحّد — حجوزات · نتائج · مخزون · حسابات</div>
+    <label>المستخدم</label>
+    <select id="loginUser">
+      <option value="Rami Mokhtar|Admin">Rami Mokhtar (Full Access / Admin)</option>
+      <option value="Rehab Ali|Lab Manager">Rehab Ali (Lab Manager / Pathologist)</option>
+      <option value="RT LAB|Staff">RT LAB (Staff / Reception)</option>
+    </select>
+    <label>كلمة المرور</label>
+    <input type="password" id="loginPass" placeholder="أدخل كلمة المرور">
+    <label>الفرع</label>
+    <select id="loginBranch">
+      <option>الفرع الرئيسي - شبرا الخيمة القاهرة</option>
+      <option>فرع مدينة نصر</option>
+    </select>
+    <button type="button" id="btnLogin">دخول إلى النظام الموحّد</button>
+    <div class="login-hint">Rami → rami2026 · Rehab → rehab2026 · RT LAB → rtlab2026</div>
+  </div>
+</div>
+
+<div id="appShell">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button type="button" class="menu-toggle" id="btnMenu">☰</button>
+      <div class="brand">RT LAB <span id="branchLabel">النظام الموحّد</span></div>
+    </div>
+    <div class="user-area">
+      <span id="userName">—</span>
+      <span class="role-badge" id="userRole">—</span>
+      <button type="button" class="btn-sm btn-out" id="btnLogout">خروج</button>
+    </div>
+  </div>
+
+  <div class="body-row">
+    <nav class="sidenav" id="sidenav">
+      <div class="nav-section">واجهة العميل</div>
+      <a class="nav-item" id="nav-book-lab" href="#"><span class="ico">🧪</span> حجز موعد تحاليل</a>
+      <a class="nav-item" id="nav-book-mem" href="#"><span class="ico">💳</span> طلب كارت عضوية</a>
+      <a class="nav-item" id="nav-book-portal" href="#"><span class="ico">🔎</span> نتيجتي وكارتي</a>
+      <a class="nav-item" id="nav-book-admin" href="#"><span class="ico">🔐</span> إدارة الحجوزات</a>
+
+      <div class="nav-section">المختبر</div>
+      <a class="nav-item" id="nav-lis" href="#"><span class="ico">🔬</span> برنامج النتايج (LIS)</a>
+
+      <div class="nav-section">روابط مباشرة</div>
+      <a class="nav-item" id="nav-book-full" href="#" target="_blank"><span class="ico">↗</span> فتح الحجز في تبويب</a>
+      <a class="nav-item" id="nav-lis-full" href="#" target="_blank"><span class="ico">↗</span> فتح LIS في تبويب</a>
+
+      <div class="nav-footer">كل قسم يفتح صفحة كاملة بكل المميزات</div>
+    </nav>
+
+    <div class="main-area">
+      <div class="note">
+        اضغط أي بطاقة بالأسفل — هتفتح الصفحة كاملة (حجز / عضوية / نتيجتي / مختبر) بكل الأزرار والتبويبات.
+        للرجوع هنا استخدم زر الرجوع في المتصفح أو افتح رابط الرئيسية من جديد.
+      </div>
+
+      <div class="hub-hero">
+        <h2>نظام RT LAB الموحّد</h2>
+        <p>بوابة واحدة لكل الأقسام. اختر ما تحتاجه من البطاقات أو القائمة الجانبية.</p>
+      </div>
+
+      <div class="group-title">🌐 واجهة العميل — حجز · عضوية · نتيجتي</div>
+      <div class="hub-grid">
+        <a class="hub-card book" id="card-lab" href="#">
+          <div class="ico">🧪</div>
+          <h3>حجز موعد تحاليل</h3>
+          <p>رفع روشتة، حجز موعد، زيارة منزلية</p>
+        </a>
+        <a class="hub-card book" id="card-mem" href="#">
+          <div class="ico">💳</div>
+          <h3>طلب كارت عضوية</h3>
+          <p>الباقات من SILVER إلى BLACK</p>
+        </a>
+        <a class="hub-card book" id="card-portal" href="#">
+          <div class="ico">🔎</div>
+          <h3>نتيجتي وكارتي</h3>
+          <p>استعلام النتيجة وطباعة الكارت</p>
+        </a>
+        <a class="hub-card book" id="card-admin" href="#">
+          <div class="ico">🔐</div>
+          <h3>إدارة الحجوزات</h3>
+          <p>مواعيد، تسعير، تأكيد، تقارير</p>
+        </a>
+      </div>
+
+      <div class="group-title">🔬 المختبر · النتائج · تشغيل</div>
+      <div class="hub-grid">
+        <a class="hub-card lis" id="card-lis" href="#">
+          <div class="ico">🔬</div>
+          <h3>برنامج النتايج (LIS)</h3>
+          <p>مرضى، نتائج، تقارير، مخزون، مصروفات، حضور</p>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const PASSWORDS = {
+    'Rami Mokhtar': 'rami2026',
+    'Rehab Ali': 'rehab2026',
+    'RT LAB': 'rtlab2026'
+  };
+  const BOOK = 'RT_LAB_BOOKING_FULL.html';
+  const LIS = 'RT_LAB_LIS_FULL.html';
+
+  function urlBook(tab, admin) {
+    if (admin) return BOOK + '?view=admin';
+    return BOOK + '?view=public&tab=' + (tab || 'lab');
+  }
+  function urlLis(page) {
+    return page ? (LIS + '?page=' + page) : LIS;
+  }
+
+  // set all links
+  const links = {
+    'nav-book-lab': urlBook('lab'),
+    'nav-book-mem': urlBook('mem'),
+    'nav-book-portal': urlBook('portal'),
+    'nav-book-admin': urlBook(null, true),
+    'nav-lis': urlLis(),
+    'nav-book-full': BOOK,
+    'nav-lis-full': LIS,
+    'card-lab': urlBook('lab'),
+    'card-mem': urlBook('mem'),
+    'card-portal': urlBook('portal'),
+    'card-admin': urlBook(null, true),
+    'card-lis': urlLis()
+  };
+  Object.keys(links).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.href = links[id];
+  });
+
+  document.getElementById('btnLogin').addEventListener('click', doLogin);
+  document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+  function doLogin() {
+    const raw = document.getElementById('loginUser').value;
+    const [name, role] = raw.split('|');
+    const pass = document.getElementById('loginPass').value;
+    if (!PASSWORDS[name] || pass !== PASSWORDS[name]) {
+      alert('كلمة المرور غير صحيحة\\nRami → rami2026\\nRehab → rehab2026\\nRT LAB → rtlab2026');
+      return;
+    }
+    const user = { name, role, branch: document.getElementById('loginBranch').value };
+    try { sessionStorage.setItem('rt_unified_user', JSON.stringify(user)); } catch (e) {}
+    enterApp(user);
+  }
+
+  function enterApp(user) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appShell').classList.add('show');
+    document.getElementById('userName').textContent = user.name;
+    document.getElementById('userRole').textContent = user.role;
+    document.getElementById('branchLabel').textContent = user.branch || '';
+  }
+
+  try {
+    const s = sessionStorage.getItem('rt_unified_user');
+    if (s) enterApp(JSON.parse(s));
+  } catch (e) {}
+
+  document.getElementById('btnLogout').addEventListener('click', () => {
+    try { sessionStorage.removeItem('rt_unified_user'); } catch (e) {}
+    location.reload();
+  });
+  document.getElementById('btnMenu').addEventListener('click', () => {
+    document.getElementById('sidenav').classList.toggle('mobile-open');
+  });
+})();
+</script>
+</body>
+</html>
