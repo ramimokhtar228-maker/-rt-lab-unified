@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RT LAB V2 — AI Center (M6)</title>
+  <script src="../js/result-engine.js"></script>
+  <script src="../js/report-engine.js"></script>
+  <script src="../js/ai-engine.js"></script>
+  <style>
+    :root { --primary:#800000; --secondary:#1a237e; --bg:#f4f6f9; --border:#e2e8f0; }
+    * { box-sizing:border-box; font-family:'Segoe UI',Tahoma,Arial,sans-serif; }
+    body { margin:0; background:var(--bg); color:#1e293b; }
+    .top {
+      background:linear-gradient(135deg,#4a148c,var(--secondary));
+      color:#fff; padding:14px 18px;
+    }
+    .top h1 { margin:0; font-size:18px; }
+    .top p { margin:4px 0 0; font-size:12px; opacity:.92; }
+    .wrap { max-width:1000px; margin:0 auto; padding:16px; }
+    .card {
+      background:#fff; border:1px solid var(--border); border-radius:12px;
+      padding:14px 16px; margin-bottom:14px;
+    }
+    .card h2 { margin:0 0 10px; font-size:15px; color:#4a148c; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; }
+    label { font-size:11px; font-weight:700; color:#64748b; display:block; margin-bottom:4px; }
+    input, select, textarea {
+      width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px;
+      font-family:inherit;
+    }
+    textarea { min-height:72px; direction:ltr; text-align:left; }
+    .btn {
+      border:0; border-radius:8px; padding:9px 14px; font-weight:800; font-size:12px;
+      cursor:pointer; color:#fff; background:#4a148c; font-family:inherit;
+    }
+    .btn-ok { background:#2e7d32; }
+    .btn-danger { background:#c62828; }
+    .btn-ghost { background:#e2e8f0; color:#334155; }
+    .actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+    .note { font-size:12px; color:#64748b; line-height:1.55; }
+    .warn {
+      background:#fef3c7; border:1px solid #fcd34d; color:#92400e;
+      padding:10px 12px; border-radius:8px; font-size:12px; margin-bottom:12px;
+    }
+    .badge {
+      display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:800;
+    }
+    .badge.pending { background:#ffedd5; color:#9a3412; }
+    .badge.approved { background:#dcfce7; color:#166534; }
+    .badge.rejected { background:#fee2e2; color:#991b1b; }
+    .badge.crit { background:#fee2e2; color:#991b1b; }
+    .badge.abn { background:#ffedd5; color:#9a3412; }
+    .badge.norm { background:#dcfce7; color:#166534; }
+    table { width:100%; border-collapse:collapse; font-size:12px; }
+    th { background:#f1f5f9; text-align:right; padding:8px; border-bottom:1px solid var(--border); }
+    td { padding:8px; border-bottom:1px solid var(--border); vertical-align:top; }
+    .box {
+      border:1px solid var(--border); border-radius:8px; padding:10px; margin-top:8px;
+      background:#f8fafc; font-size:13px; direction:ltr; text-align:left; white-space:pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <h1>RT LAB V2 — AI Center (M6)</h1>
+    <p>تفسير بعد النتائج فقط · لا يغيّر الأرقام · يحتاج موافقة بشرية قبل التقرير</p>
+  </div>
+
+  <div class="wrap">
+    <div class="warn">
+      <b>قواعد صارمة:</b> الذكاء الاصطناعي هنا لا يدخل ولا يعدّل نتيجة التحليل.
+      دوره: ملخص / تفسير مخبري / توصيات عامة → حالة <b>PENDING_REVIEW</b> حتى يعتمدها المختص.
+      التقرير النهائي لا يُرسل للعميل من هذه الشاشة تلقائياً.
+    </div>
+
+    <div class="card">
+      <h2>1) إنشاء اقتراح من نتائج (محاكاة)</h2>
+      <div class="grid">
+        <div><label>المريض</label><input id="pName" value="أحمد محمد" /></div>
+        <div>
+          <label>الجنس</label>
+          <select id="pSex"><option>Male</option><option>Female</option></select>
+        </div>
+        <div><label>السن</label><input id="pAge" value="43 سنة" /></div>
+        <div><label>رقم الطلب</label><input id="orderId" value="RT-2026-000152" /></div>
+        <div><label>Hb</label><input id="vHb" value="10.2" /></div>
+        <div><label>MCV</label><input id="vMcv" value="72" /></div>
+        <div><label>WBC</label><input id="vWbc" value="7.1" /></div>
+        <div><label>PLT</label><input id="vPlt" value="210" /></div>
+        <div><label>CHOL</label><input id="vChol" value="245" /></div>
+        <div><label>LDL</label><input id="vLdl" value="160" /></div>
+        <div><label>ALT</label><input id="vAlt" value="68" /></div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn" onclick="App.runAI()">توليد اقتراح AI (بدون اعتماد)</button>
+        <button type="button" class="btn btn-ghost" onclick="App.refresh()">تحديث القائمة</button>
+        <a class="btn btn-ghost" style="text-decoration:none;display:inline-block" href="lis-report-v2.html">التقرير (M3)</a>
+      </div>
+      <div id="preview" style="display:none;margin-top:12px;">
+        <div class="note">معاينة الاقتراح (لم يُعتمد بعد):</div>
+        <div class="box" id="previewBox"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>2) قائمة AI Center</h2>
+      <div class="actions" style="margin-top:0">
+        <button type="button" class="btn btn-ghost" onclick="App.filter('ALL')">الكل</button>
+        <button type="button" class="btn btn-ghost" onclick="App.filter('PENDING_REVIEW')">Pending</button>
+        <button type="button" class="btn btn-ghost" onclick="App.filter('APPROVED')">Approved</button>
+        <button type="button" class="btn btn-ghost" onclick="App.filter('REJECTED')">Rejected</button>
+      </div>
+      <div style="overflow:auto;margin-top:8px;">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>الطلب / المريض</th>
+              <th>الشدة</th>
+              <th>الحالة</th>
+              <th>إجراء</th>
+            </tr>
+          </thead>
+          <tbody id="tbl"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" id="detailCard" style="display:none;">
+      <h2>3) مراجعة بشرية</h2>
+      <div id="detail"></div>
+      <div class="actions">
+        <button type="button" class="btn btn-ok" onclick="App.approve()">اعتماد للتقرير (Approve)</button>
+        <button type="button" class="btn btn-danger" onclick="App.reject()">رفض</button>
+      </div>
+      <p class="note">بعد الاعتماد فقط يمكن استخدام النصوص في وضع PREMIUM للتقرير. القيم الأصلية للتحاليل تبقى كما أدخلها الفني.</p>
+    </div>
+  </div>
+
+  <script>
+    const App = (() => {
+      let filterStatus = 'ALL';
+      let selectedId = null;
+
+      function buildBlocks() {
+        const sex = document.getElementById('pSex').value;
+        const ageText = document.getElementById('pAge').value;
+        const cbc = RTResultEngine.evaluateTest({
+          testCode: 'CBC',
+          values: {
+            Hb: document.getElementById('vHb').value,
+            MCV: document.getElementById('vMcv').value,
+            WBC: document.getElementById('vWbc').value,
+            PLT: document.getElementById('vPlt').value
+          },
+          sex, ageText
+        });
+        const lipid = RTResultEngine.evaluateTest({
+          testCode: 'LIPID',
+          values: {
+            CHOL: document.getElementById('vChol').value,
+            LDL: document.getElementById('vLdl').value
+          },
+          sex, ageText
+        });
+        const lft = RTResultEngine.evaluateTest({
+          testCode: 'LFT',
+          values: { ALT: document.getElementById('vAlt').value },
+          sex, ageText
+        });
+        return [cbc, lipid, lft];
+      }
+
+      function runAI() {
+        const blocks = buildBlocks();
+        const patient = {
+          name: document.getElementById('pName').value,
+          sex: document.getElementById('pSex').value,
+          ageText: document.getElementById('pAge').value
+        };
+        const job = RTAIEngine.createJob({
+          blocks,
+          patient,
+          orderId: document.getElementById('orderId').value
+        });
+        document.getElementById('preview').style.display = 'block';
+        const s = job.suggestion;
+        document.getElementById('previewBox').textContent =
+          'Severity: ' + s.severity + '\n\n' +
+          'SUMMARY:\n' + s.summary + '\n\n' +
+          'INTERPRETATION:\n' + s.interpretation + '\n\n' +
+          'RECOMMENDATIONS:\n' + s.recommendations + '\n\n' +
+          s.disclaimer;
+        selectedId = job.id;
+        refresh();
+        showDetail(job.id);
+        alert('تم إنشاء اقتراح بحالة PENDING_REVIEW — لم يُعتمد بعد.');
+      }
+
+      function filter(st) {
+        filterStatus = st;
+        refresh();
+      }
+
+      function refresh() {
+        const rows = RTAIEngine.listJobs(filterStatus);
+        const tb = document.getElementById('tbl');
+        tb.innerHTML = rows.length ? rows.map(j => {
+          const sev = j.suggestion.severity;
+          const sevCls = sev === 'CRITICAL' ? 'crit' : sev === 'ABNORMAL' ? 'abn' : 'norm';
+          const stCls = j.status === 'APPROVED' ? 'approved' : j.status === 'REJECTED' ? 'rejected' : 'pending';
+          return `<tr>
+            <td><code>${j.id}</code></td>
+            <td>${j.orderId}<br/><span class="note">${j.patientName}</span></td>
+            <td><span class="badge ${sevCls}">${sev}</span></td>
+            <td><span class="badge ${stCls}">${j.status}</span></td>
+            <td><button type="button" class="btn btn-ghost" data-id="${j.id}">فتح</button></td>
+          </tr>`;
+        }).join('') : '<tr><td colspan="5" class="note">لا عناصر</td></tr>';
+        tb.querySelectorAll('[data-id]').forEach(b => {
+          b.onclick = () => showDetail(b.getAttribute('data-id'));
+        });
+      }
+
+      function showDetail(id) {
+        selectedId = id;
+        const j = RTAIEngine.getJob(id);
+        if (!j) return;
+        document.getElementById('detailCard').style.display = 'block';
+        const s = j.suggestion;
+        document.getElementById('detail').innerHTML = `
+          <div class="note"><b>${j.id}</b> · ${j.orderId} · ${j.patientName}
+          · <span class="badge ${j.status === 'APPROVED' ? 'approved' : j.status === 'REJECTED' ? 'rejected' : 'pending'}">${j.status}</span></div>
+          <div class="box"><b>Summary</b>\n${s.summary}</div>
+          <div class="box"><b>Interpretation</b>\n${s.interpretation}</div>
+          <div class="box"><b>Recommendations</b>\n${s.recommendations}</div>
+          <div class="box note">${s.disclaimer}</div>
+          ${j.reviewedBy ? `<p class="note">مراجعة: ${j.reviewedBy} · ${j.reviewedAt}${j.rejectReason ? ' · سبب الرفض: ' + j.rejectReason : ''}</p>` : ''}
+        `;
+      }
+
+      function approve() {
+        if (!selectedId) return;
+        try {
+          RTAIEngine.approveJob(selectedId, 'Pathologist');
+          alert('تم الاعتماد. يمكن استخدام النص في تقرير PREMIUM فقط — النتائج الرقمية لم تتغير.');
+          refresh();
+          showDetail(selectedId);
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+
+      function reject() {
+        if (!selectedId) return;
+        const reason = prompt('سبب الرفض (اختياري):') || '';
+        try {
+          RTAIEngine.rejectJob(selectedId, 'Pathologist', reason);
+          refresh();
+          showDetail(selectedId);
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+
+      function init() {
+        refresh();
+      }
+
+      return { runAI, refresh, filter, approve, reject, init };
+    })();
+
+    document.addEventListener('DOMContentLoaded', App.init);
+  </script>
+</body>
+</html>

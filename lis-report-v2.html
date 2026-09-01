@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RT LAB V2 — Report Engine</title>
+  <script src="../js/result-engine.js"></script>
+  <script src="../js/report-engine.js"></script>
+  <script src="../js/portal-engine.js"></script>
+  <style>
+    :root { --primary:#800000; --secondary:#1a237e; --bg:#f4f6f9; --border:#e2e8f0; }
+    * { box-sizing:border-box; font-family:'Segoe UI',Tahoma,Arial,sans-serif; }
+    body { margin:0; background:var(--bg); color:#1e293b; }
+    .top {
+      background:linear-gradient(135deg,var(--primary),var(--secondary)); color:#fff;
+      padding:14px 18px;
+    }
+    .top h1 { margin:0; font-size:18px; }
+    .top p { margin:4px 0 0; font-size:12px; opacity:.92; }
+    .wrap { max-width:1000px; margin:0 auto; padding:16px; }
+    .card {
+      background:#fff; border:1px solid var(--border); border-radius:12px;
+      padding:14px 16px; margin-bottom:14px;
+    }
+    .card h2 { margin:0 0 10px; font-size:15px; color:var(--primary); }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+    label { font-size:11px; font-weight:700; color:#64748b; display:block; margin-bottom:4px; }
+    input, select {
+      width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px;
+    }
+    .btn {
+      border:0; border-radius:8px; padding:9px 14px; font-weight:800; font-size:13px;
+      cursor:pointer; color:#fff; background:var(--primary); font-family:inherit;
+    }
+    .btn-sec { background:var(--secondary); }
+    .btn-ok { background:#2e7d32; }
+    .btn-ghost { background:#e2e8f0; color:#334155; }
+    .actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+    .modes { display:flex; gap:8px; flex-wrap:wrap; }
+    .mode {
+      border:2px solid var(--border); border-radius:10px; padding:10px 14px; cursor:pointer;
+      background:#f8fafc; font-size:12px; font-weight:800; min-width:120px; text-align:center;
+    }
+    .mode.on { border-color:var(--primary); background:#fce7f3; color:var(--primary); }
+    .mode small { display:block; font-weight:600; color:#64748b; margin-top:4px; }
+    .note { font-size:12px; color:#64748b; line-height:1.5; }
+    #frameBox {
+      background:#d4d4d4; border-radius:8px; padding:12px; min-height:200px;
+      overflow:auto; max-height:75vh;
+    }
+    #frameBox iframe { width:100%; min-height:70vh; border:0; background:#fff; border-radius:4px; }
+    .token {
+      font-family:ui-monospace,monospace; font-size:11px; background:#f1f5f9;
+      padding:8px; border-radius:6px; word-break:break-all;
+    }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <h1>RT LAB V2 — Report Engine (M3)</h1>
+    <p>التقرير يُولَّد من البيانات · STANDARD / PROFESSIONAL / PREMIUM · QR للتحقق · PDF عبر الطباعة</p>
+  </div>
+
+  <div class="wrap">
+    <div class="card">
+      <h2>بيانات المريض والطلب</h2>
+      <div class="grid">
+        <div><label>الاسم</label><input id="name" value="أحمد محمد السيد" /></div>
+        <div>
+          <label>الجنس</label>
+          <select id="sex"><option>Male</option><option>Female</option></select>
+        </div>
+        <div><label>السن</label><input id="age" value="43 سنة" /></div>
+        <div><label>رقم الطلب</label><input id="orderId" value="RT-2026-000152" /></div>
+        <div><label>الطبيب</label><input id="doctor" value="Dr. Clinic" /></div>
+        <div><label>وقت السحب</label><input id="drawAt" value="2026-09-01 09:25" /></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>نتائج تجريبية (من Result Engine)</h2>
+      <p class="note">قيم افتراضية لعرض التقرير — غيّرها ثم اضغط «توليد».</p>
+      <div class="grid">
+        <div><label>Hb</label><input id="v_Hb" value="10.8" /></div>
+        <div><label>HCT</label><input id="v_HCT" value="33" /></div>
+        <div><label>RBC</label><input id="v_RBC" value="3.9" /></div>
+        <div><label>WBC</label><input id="v_WBC" value="7.2" /></div>
+        <div><label>PLT</label><input id="v_PLT" value="220" /></div>
+        <div><label>CHOL</label><input id="v_CHOL" value="240" /></div>
+        <div><label>TG</label><input id="v_TG" value="180" /></div>
+        <div><label>HDL</label><input id="v_HDL" value="38" /></div>
+        <div><label>ALT</label><input id="v_ALT" value="65" /></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>وضع التقرير</h2>
+      <div class="modes" id="modes">
+        <div class="mode on" data-mode="standard">STANDARD<small>نتائج فقط</small></div>
+        <div class="mode" data-mode="professional">PROFESSIONAL<small>+ تعليق مخبري</small></div>
+        <div class="mode" data-mode="premium">PREMIUM<small>+ ملخص + توصيات</small></div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn btn-ok" onclick="gen()">توليد التقرير من البيانات</button>
+        <button type="button" class="btn btn-sec" onclick="doPrint()">طباعة / حفظ PDF</button>
+        <button type="button" class="btn btn-ghost" onclick="copyToken()">نسخ Token</button>
+        <button type="button" class="btn" style="background:#0f766e" onclick="releasePortal()">إصدار للبوابة / المريض</button>
+        <a class="btn btn-ghost" style="display:inline-block;text-decoration:none;line-height:1.2;padding:9px 14px" href="verify.html" target="_blank">فتح التحقق</a>
+      </div>
+      <p class="note" style="margin-top:8px;">Token التحقق:</p>
+      <div class="token" id="tokenBox">—</div>
+    </div>
+
+    <div class="card">
+      <h2>معاينة</h2>
+      <div id="frameBox"><p class="note">اضغط «توليد التقرير»…</p></div>
+    </div>
+  </div>
+
+  <script>
+    let currentMode = 'standard';
+    let lastModel = null;
+    let lastHtml = '';
+
+    document.querySelectorAll('.mode').forEach(el => {
+      el.onclick = () => {
+        document.querySelectorAll('.mode').forEach(x => x.classList.remove('on'));
+        el.classList.add('on');
+        currentMode = el.dataset.mode;
+        gen();
+      };
+    });
+
+    function buildBlocks() {
+      const sex = document.getElementById('sex').value;
+      const ageText = document.getElementById('age').value;
+      const cbcVals = {
+        Hb: document.getElementById('v_Hb').value,
+        HCT: document.getElementById('v_HCT').value,
+        RBC: document.getElementById('v_RBC').value,
+        WBC: document.getElementById('v_WBC').value,
+        PLT: document.getElementById('v_PLT').value
+      };
+      const lipidVals = {
+        CHOL: document.getElementById('v_CHOL').value,
+        TG: document.getElementById('v_TG').value,
+        HDL: document.getElementById('v_HDL').value
+      };
+      const lftVals = { ALT: document.getElementById('v_ALT').value };
+
+      return [
+        RTResultEngine.evaluateTest({ testCode: 'CBC', values: cbcVals, sex, ageText }),
+        RTResultEngine.evaluateTest({ testCode: 'LIPID', values: lipidVals, sex, ageText }),
+        RTResultEngine.evaluateTest({ testCode: 'LFT', values: lftVals, sex, ageText })
+      ];
+    }
+
+    function gen() {
+      const blocks = buildBlocks();
+      lastModel = RTReportEngine.buildReportModel({
+        patient: {
+          name: document.getElementById('name').value,
+          sex: document.getElementById('sex').value,
+          ageText: document.getElementById('age').value
+        },
+        order: {
+          id: document.getElementById('orderId').value,
+          doctor: document.getElementById('doctor').value
+        },
+        sample: {
+          collectedAt: document.getElementById('drawAt').value
+        },
+        blocks,
+        mode: currentMode,
+        version: 1,
+        status: 'FINAL',
+        branch: 'الفرع الرئيسي — شبرا الخيمة، القاهرة'
+      });
+      lastHtml = RTReportEngine.renderReportHtml(lastModel, {
+        verifyBaseUrl: 'https://ramimokhtar228-maker.github.io/-rt-lab-unified/verify'
+      });
+      document.getElementById('tokenBox').textContent = lastModel.meta.secureToken;
+      const box = document.getElementById('frameBox');
+      box.innerHTML = '';
+      const iframe = document.createElement('iframe');
+      iframe.setAttribute('title', 'Report preview');
+      box.appendChild(iframe);
+      const doc = iframe.contentDocument || iframe.contentWindow.document;
+      doc.open();
+      doc.write(lastHtml);
+      doc.close();
+    }
+
+    function doPrint() {
+      if (!lastModel) gen();
+      RTReportEngine.openPrint(lastModel, {
+        verifyBaseUrl: 'https://ramimokhtar228-maker.github.io/-rt-lab-unified/verify'
+      });
+    }
+
+    function copyToken() {
+      if (!lastModel) return;
+      navigator.clipboard.writeText(lastModel.meta.secureToken).then(() => alert('تم نسخ Token'));
+    }
+
+    function releasePortal() {
+      if (!lastModel) gen();
+      lastModel.meta.status = 'RELEASED';
+      lastHtml = RTReportEngine.renderReportHtml(lastModel, {
+        verifyBaseUrl: new URL('verify.html', location.href).href.replace(/verify\.html.*/, 'verify.html')
+      });
+      const rec = RTPortal.releaseReport(lastModel, lastHtml);
+      document.getElementById('tokenBox').textContent = rec.token;
+      // refresh iframe
+      const box = document.getElementById('frameBox');
+      box.innerHTML = '';
+      const iframe = document.createElement('iframe');
+      box.appendChild(iframe);
+      const doc = iframe.contentDocument;
+      doc.open(); doc.write(lastHtml); doc.close();
+      alert('تم إصدار التقرير للبوابة.\nToken:\n' + rec.token + '\n\nافتح verify.html والصق الرمز.');
+    }
+
+    gen();
+  </script>
+</body>
+</html>

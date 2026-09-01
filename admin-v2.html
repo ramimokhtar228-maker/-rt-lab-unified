@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RT LAB V2 — Administration (M7)</title>
+  <script src="../js/admin-engine.js"></script>
+  <style>
+    :root { --primary:#800000; --secondary:#1a237e; --bg:#f4f6f9; --border:#e2e8f0; }
+    * { box-sizing:border-box; font-family:'Segoe UI',Tahoma,Arial,sans-serif; }
+    body { margin:0; background:var(--bg); color:#1e293b; }
+    .layout { display:flex; min-height:100vh; }
+    .side {
+      width:220px; background:#1e1e2d; color:#fff; flex-shrink:0; padding:16px 0;
+    }
+    .side .brand { padding:0 16px 16px; font-weight:900; color:#f9a8d4; font-size:15px; border-bottom:1px solid #333; }
+    .side button {
+      display:block; width:100%; text-align:right; border:0; background:transparent;
+      color:#cbd5e1; padding:12px 16px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit;
+    }
+    .side button:hover, .side button.on { background:#2b2b40; color:#fff; border-right:3px solid #800000; }
+    .main { flex:1; padding:16px; overflow:auto; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px; }
+    .topbar h1 { margin:0; font-size:18px; color:var(--primary); }
+    .card {
+      background:#fff; border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:14px;
+    }
+    .card h2 { margin:0 0 10px; font-size:14px; color:var(--secondary); }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; }
+    label { font-size:11px; font-weight:700; color:#64748b; display:block; margin-bottom:4px; }
+    input, select {
+      width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px;
+    }
+    .btn {
+      border:0; border-radius:8px; padding:8px 12px; font-weight:800; font-size:12px;
+      cursor:pointer; color:#fff; background:var(--primary); font-family:inherit;
+    }
+    .btn-sec { background:var(--secondary); }
+    .btn-ok { background:#2e7d32; }
+    .btn-danger { background:#c62828; }
+    .btn-ghost { background:#e2e8f0; color:#334155; }
+    .actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+    table { width:100%; border-collapse:collapse; font-size:12px; }
+    th { background:#f1f5f9; text-align:right; padding:8px; border-bottom:1px solid var(--border); }
+    td { padding:8px; border-bottom:1px solid var(--border); }
+    .note { font-size:12px; color:#64748b; line-height:1.5; }
+    .stat {
+      background:#fff; border:1px solid var(--border); border-radius:10px; padding:12px;
+      border-right:4px solid var(--primary);
+    }
+    .stat .v { font-size:18px; font-weight:900; color:var(--secondary); }
+    .stat .l { font-size:11px; color:#64748b; }
+    .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:800; background:#ffedd5; color:#9a3412; }
+    .badge.ok { background:#dcfce7; color:#166534; }
+    .page { display:none; }
+    .page.on { display:block; }
+    @media (max-width:800px) {
+      .layout { flex-direction:column; }
+      .side { width:100%; display:flex; overflow:auto; padding:8px; }
+      .side .brand { display:none; }
+      .side button { white-space:nowrap; border-right:0; border-bottom:3px solid transparent; }
+      .side button.on { border-bottom-color:#f9a8d4; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="side">
+      <div class="brand">RT LAB · Administration</div>
+      <button type="button" class="on" data-page="dash">لوحة الإدارة</button>
+      <button type="button" data-page="finance">المالية والتحصيل</button>
+      <button type="button" data-page="expenses">المصروفات</button>
+      <button type="button" data-page="inventory">المخزون</button>
+      <button type="button" data-page="hr">الحضور والمرتبات</button>
+      <button type="button" data-page="settings">إعدادات التقسيم</button>
+    </aside>
+
+    <div class="main">
+      <div class="topbar">
+        <h1>إدارة المعمل — ليست شاشة إدخال نتائج</h1>
+        <div class="actions" style="margin:0">
+          <button type="button" class="btn btn-ghost" onclick="App.seed()">بيانات تجريبية</button>
+          <a class="btn btn-ghost" style="text-decoration:none" href="index.html">فهرس V2</a>
+        </div>
+      </div>
+      <p class="note" style="margin-top:-8px;margin-bottom:12px;">الوحدات هنا خلف Administration فقط — لا تظهر في مسار الفني اليومي (Result Entry).</p>
+
+      <!-- DASH -->
+      <div id="page-dash" class="page on">
+        <div class="grid" id="dashStats"></div>
+        <div class="card" style="margin-top:14px;">
+          <h2>تنبيهات مخزون منخفض</h2>
+          <div id="lowStock" class="note">—</div>
+        </div>
+      </div>
+
+      <!-- FINANCE -->
+      <div id="page-finance" class="page">
+        <div class="card">
+          <h2>تسجيل تحصيل</h2>
+          <div class="grid">
+            <div><label>التاريخ</label><input type="date" id="payDate" /></div>
+            <div><label>رقم الطلب</label><input id="payOrder" placeholder="RT-…" /></div>
+            <div><label>المريض</label><input id="payName" /></div>
+            <div><label>المبلغ</label><input type="number" id="payAmt" value="0" /></div>
+            <div>
+              <label>الطريقة</label>
+              <select id="payMethod"><option value="cash">نقدي</option><option value="visa">فيزا</option><option value="transfer">تحويل</option></select>
+            </div>
+          </div>
+          <div class="actions"><button type="button" class="btn btn-ok" onclick="App.addPay()">حفظ التحصيل</button></div>
+        </div>
+        <div class="card">
+          <h2>تقرير الدخل والتقسيم (بعد خصم التحاليل الخارجية ومصروفات التشغيل)</h2>
+          <div class="grid">
+            <div><label>من</label><input type="date" id="repFrom" /></div>
+            <div><label>إلى</label><input type="date" id="repTo" /></div>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn btn-sec" onclick="App.runReport()">احسب</button>
+            <button type="button" class="btn btn-ghost" onclick="App.printReport()">طباعة / PDF</button>
+          </div>
+          <div id="repOut" class="note" style="margin-top:10px;"></div>
+        </div>
+        <div class="card">
+          <h2>آخر التحصيلات</h2>
+          <div style="overflow:auto"><table><thead><tr><th>تاريخ</th><th>طلب</th><th>مريض</th><th>مبلغ</th><th>طريقة</th><th></th></tr></thead><tbody id="tblPay"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- EXPENSES -->
+      <div id="page-expenses" class="page">
+        <div class="card">
+          <h2>مصروف جديد</h2>
+          <div class="grid">
+            <div><label>التاريخ</label><input type="date" id="exDate" /></div>
+            <div>
+              <label>البند</label>
+              <select id="exCat">
+                <option value="rent">إيجار</option>
+                <option value="electricity">كهرباء</option>
+                <option value="water">مياه</option>
+                <option value="external_tests">تحاليل خارجية</option>
+                <option value="supplies">مستلزمات</option>
+                <option value="other">أخرى</option>
+              </select>
+            </div>
+            <div><label>المبلغ</label><input type="number" id="exAmt" value="0" /></div>
+            <div><label>ملاحظة</label><input id="exNote" /></div>
+          </div>
+          <div class="actions"><button type="button" class="btn btn-ok" onclick="App.addEx()">حفظ</button></div>
+        </div>
+        <div class="card">
+          <h2>سجل المصروفات</h2>
+          <div style="overflow:auto"><table><thead><tr><th>تاريخ</th><th>بند</th><th>مبلغ</th><th>ملاحظة</th><th></th></tr></thead><tbody id="tblEx"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- INVENTORY -->
+      <div id="page-inventory" class="page">
+        <div class="card">
+          <h2>صنف جديد</h2>
+          <div class="grid">
+            <div><label>الاسم</label><input id="invName" /></div>
+            <div><label>SKU</label><input id="invSku" /></div>
+            <div><label>وحدة</label><input id="invUnit" value="unit" /></div>
+            <div><label>الكمية</label><input type="number" id="invQty" value="0" /></div>
+            <div><label>حد أدنى</label><input type="number" id="invMin" value="0" /></div>
+            <div><label>تكلفة</label><input type="number" id="invCost" value="0" /></div>
+            <div><label>صلاحية</label><input type="date" id="invExp" /></div>
+          </div>
+          <div class="actions"><button type="button" class="btn btn-ok" onclick="App.addInv()">إضافة</button></div>
+        </div>
+        <div class="card">
+          <h2>المخزون</h2>
+          <div style="overflow:auto"><table><thead><tr><th>صنف</th><th>كمية</th><th>حد أدنى</th><th>تكلفة</th><th>صلاحية</th><th>حركة</th></tr></thead><tbody id="tblInv"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- HR -->
+      <div id="page-hr" class="page">
+        <div class="card">
+          <h2>موظف جديد</h2>
+          <div class="grid">
+            <div><label>الاسم</label><input id="empName" /></div>
+            <div><label>الوظيفة</label><input id="empRole" /></div>
+            <div><label>الراتب الشهري</label><input type="number" id="empSal" value="0" /></div>
+          </div>
+          <div class="actions"><button type="button" class="btn btn-ok" onclick="App.addEmp()">إضافة</button></div>
+        </div>
+        <div class="card">
+          <h2>الموظفون</h2>
+          <div style="overflow:auto"><table><thead><tr><th>اسم</th><th>وظيفة</th><th>راتب</th><th>حالة</th><th></th></tr></thead><tbody id="tblEmp"></tbody></table></div>
+        </div>
+        <div class="card">
+          <h2>حضور / انصراف</h2>
+          <div class="grid">
+            <div><label>الموظف</label><select id="attEmp"></select></div>
+            <div><label>التاريخ</label><input type="date" id="attDate" /></div>
+            <div><label>حضور</label><input type="time" id="attIn" /></div>
+            <div><label>انصراف</label><input type="time" id="attOut" /></div>
+            <div><label>ملاحظة</label><input id="attNote" /></div>
+          </div>
+          <div class="actions"><button type="button" class="btn btn-sec" onclick="App.addAtt()">تسجيل</button></div>
+          <div style="overflow:auto;margin-top:10px"><table><thead><tr><th>تاريخ</th><th>موظف</th><th>حضور</th><th>انصراف</th><th>ملاحظة</th><th></th></tr></thead><tbody id="tblAtt"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="page-settings" class="page">
+        <div class="card">
+          <h2>نسبة التقسيم (المعمل / CEO)</h2>
+          <div class="grid">
+            <div><label>نسبة المعمل %</label><input type="number" id="labPct" min="0" max="100" /></div>
+            <div><label>نسبة CEO %</label><input type="number" id="ceoPct" min="0" max="100" /></div>
+            <div><label>الفرع</label><input id="branchName" /></div>
+          </div>
+          <div class="actions"><button type="button" class="btn btn-ok" onclick="App.saveSettings()">حفظ</button></div>
+          <p class="note">الصافي بعد خصم التحاليل الخارجية ومصروفات التشغيل يُقسَم حسب النسب. المرتبات تُعرض كمرجع شهري منفصل.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const App = (() => {
+      const catLabel = {
+        rent: 'إيجار', electricity: 'كهرباء', water: 'مياه',
+        external_tests: 'تحاليل خارجية', supplies: 'مستلزمات', other: 'أخرى'
+      };
+
+      function today() {
+        return new Date().toISOString().slice(0, 10);
+      }
+
+      function money(n) {
+        return (Math.round((Number(n) || 0) * 100) / 100).toLocaleString('en-EG') + ' ج.م';
+      }
+
+      function go(page) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+        document.querySelectorAll('.side button').forEach(b => b.classList.remove('on'));
+        document.getElementById('page-' + page).classList.add('on');
+        document.querySelector('.side button[data-page="' + page + '"]').classList.add('on');
+        refresh();
+      }
+
+      function refresh() {
+        const s = RTAdmin.load();
+        // dash
+        const low = RTAdmin.lowStock();
+        const month = today().slice(0, 7);
+        const rep = RTAdmin.computeIncomeReport(month + '-01', today());
+        document.getElementById('dashStats').innerHTML = `
+          <div class="stat"><div class="l">تحصيل الفترة (من أول الشهر)</div><div class="v">${money(rep.gross)}</div></div>
+          <div class="stat"><div class="l">صافي تشغيلي</div><div class="v">${money(rep.net)}</div></div>
+          <div class="stat"><div class="l">أصناف منخفضة</div><div class="v">${low.length}</div></div>
+          <div class="stat"><div class="l">موظفون نشطون</div><div class="v">${s.employees.filter(e => e.active !== false).length}</div></div>
+        `;
+        document.getElementById('lowStock').innerHTML = low.length
+          ? low.map(i => `• ${i.name}: الكمية ${i.qty} (الحد ${i.minQty})`).join('<br/>')
+          : 'لا تنبيهات';
+
+        // payments
+        document.getElementById('tblPay').innerHTML = s.payments.map(p =>
+          `<tr><td>${p.date}</td><td>${p.orderId}</td><td>${p.patientName}</td><td><b>${money(p.amount)}</b></td><td>${p.method}</td>
+           <td><button type="button" class="btn btn-danger" data-del-pay="${p.id}">حذف</button></td></tr>`
+        ).join('') || '<tr><td colspan="6" class="note">لا تحصيلات</td></tr>';
+
+        // expenses
+        document.getElementById('tblEx').innerHTML = s.expenses.map(e =>
+          `<tr><td>${e.date}</td><td>${catLabel[e.category] || e.category}</td><td><b>${money(e.amount)}</b></td><td>${e.note || ''}</td>
+           <td><button type="button" class="btn btn-danger" data-del-ex="${e.id}">حذف</button></td></tr>`
+        ).join('') || '<tr><td colspan="5" class="note">لا مصروفات</td></tr>';
+
+        // inventory
+        document.getElementById('tblInv').innerHTML = s.inventory.map(i => {
+          const lowFlag = Number(i.qty) <= Number(i.minQty);
+          return `<tr>
+            <td>${i.name}<br/><span class="note">${i.sku}</span></td>
+            <td>${i.qty} ${i.unit} ${lowFlag ? '<span class="badge">منخفض</span>' : ''}</td>
+            <td>${i.minQty}</td><td>${money(i.cost)}</td><td>${i.expiresOn || '—'}</td>
+            <td>
+              <button type="button" class="btn btn-ghost" data-adj="${i.id}" data-d="1">+1</button>
+              <button type="button" class="btn btn-ghost" data-adj="${i.id}" data-d="-1">-1</button>
+              <button type="button" class="btn btn-danger" data-del-inv="${i.id}">حذف</button>
+            </td>
+          </tr>`;
+        }).join('') || '<tr><td colspan="6" class="note">لا أصناف</td></tr>';
+
+        // employees
+        document.getElementById('tblEmp').innerHTML = s.employees.map(e =>
+          `<tr>
+            <td>${e.name}</td><td>${e.role}</td><td><b>${money(e.salary)}</b></td>
+            <td>${e.active === false ? '<span class="badge">موقوف</span>' : '<span class="badge ok">نشط</span>'}</td>
+            <td>
+              <button type="button" class="btn btn-ghost" data-sal="${e.id}">راتب</button>
+              <button type="button" class="btn btn-ghost" data-tog="${e.id}">${e.active === false ? 'تفعيل' : 'إيقاف'}</button>
+              <button type="button" class="btn btn-danger" data-del-emp="${e.id}">حذف</button>
+            </td>
+          </tr>`
+        ).join('') || '<tr><td colspan="5" class="note">لا موظفين</td></tr>';
+
+        const sel = document.getElementById('attEmp');
+        sel.innerHTML = s.employees.filter(e => e.active !== false).map(e =>
+          `<option value="${e.id}">${e.name}</option>`
+        ).join('') || '<option value="">—</option>';
+
+        document.getElementById('tblAtt').innerHTML = s.attendance.map(a => {
+          const emp = s.employees.find(e => e.id === a.empId);
+          return `<tr>
+            <td>${a.date}</td><td>${emp ? emp.name : a.empId}</td>
+            <td>${a.checkIn || '—'}</td><td>${a.checkOut || '—'}</td><td>${a.note || ''}</td>
+            <td><button type="button" class="btn btn-danger" data-del-att="${a.id}">حذف</button></td>
+          </tr>`;
+        }).join('') || '<tr><td colspan="6" class="note">لا سجلات</td></tr>';
+
+        // settings
+        document.getElementById('labPct').value = s.settings.labSharePct;
+        document.getElementById('ceoPct').value = s.settings.ceoSharePct;
+        document.getElementById('branchName').value = s.settings.branch || '';
+
+        bindDeletes();
+      }
+
+      function bindDeletes() {
+        document.querySelectorAll('[data-del-pay]').forEach(b => b.onclick = () => { RTAdmin.deletePayment(b.dataset.delPay); refresh(); });
+        document.querySelectorAll('[data-del-ex]').forEach(b => b.onclick = () => { RTAdmin.deleteExpense(b.dataset.delEx); refresh(); });
+        document.querySelectorAll('[data-del-inv]').forEach(b => b.onclick = () => { RTAdmin.deleteInventory(b.dataset.delInv); refresh(); });
+        document.querySelectorAll('[data-del-emp]').forEach(b => b.onclick = () => {
+          if (confirm('حذف الموظف؟')) { RTAdmin.deleteEmployee(b.dataset.delEmp); refresh(); }
+        });
+        document.querySelectorAll('[data-del-att]').forEach(b => b.onclick = () => { RTAdmin.deleteAttendance(b.dataset.delAtt); refresh(); });
+        document.querySelectorAll('[data-adj]').forEach(b => b.onclick = () => {
+          RTAdmin.adjustStock(b.dataset.adj, Number(b.dataset.d), 'manual');
+          refresh();
+        });
+        document.querySelectorAll('[data-sal]').forEach(b => b.onclick = () => {
+          const s = RTAdmin.load().employees.find(e => e.id === b.dataset.sal);
+          const v = prompt('الراتب الجديد', s ? s.salary : 0);
+          if (v == null) return;
+          RTAdmin.updateSalary(b.dataset.sal, v);
+          refresh();
+        });
+        document.querySelectorAll('[data-tog]').forEach(b => b.onclick = () => {
+          const s = RTAdmin.load().employees.find(e => e.id === b.dataset.tog);
+          RTAdmin.setEmployeeActive(b.dataset.tog, s && s.active === false);
+          refresh();
+        });
+      }
+
+      function addPay() {
+        RTAdmin.addPayment({
+          date: document.getElementById('payDate').value || today(),
+          orderId: document.getElementById('payOrder').value,
+          patientName: document.getElementById('payName').value,
+          amount: document.getElementById('payAmt').value,
+          method: document.getElementById('payMethod').value
+        });
+        refresh();
+      }
+
+      function addEx() {
+        RTAdmin.addExpense({
+          date: document.getElementById('exDate').value || today(),
+          category: document.getElementById('exCat').value,
+          amount: document.getElementById('exAmt').value,
+          note: document.getElementById('exNote').value
+        });
+        refresh();
+      }
+
+      function addInv() {
+        RTAdmin.addInventoryItem({
+          name: document.getElementById('invName').value,
+          sku: document.getElementById('invSku').value,
+          unit: document.getElementById('invUnit').value,
+          qty: document.getElementById('invQty').value,
+          minQty: document.getElementById('invMin').value,
+          cost: document.getElementById('invCost').value,
+          expiresOn: document.getElementById('invExp').value
+        });
+        refresh();
+      }
+
+      function addEmp() {
+        RTAdmin.addEmployee({
+          name: document.getElementById('empName').value,
+          role: document.getElementById('empRole').value,
+          salary: document.getElementById('empSal').value
+        });
+        document.getElementById('empName').value = '';
+        refresh();
+      }
+
+      function addAtt() {
+        RTAdmin.upsertAttendance({
+          empId: document.getElementById('attEmp').value,
+          date: document.getElementById('attDate').value || today(),
+          checkIn: document.getElementById('attIn').value,
+          checkOut: document.getElementById('attOut').value,
+          note: document.getElementById('attNote').value
+        });
+        refresh();
+      }
+
+      function runReport() {
+        const from = document.getElementById('repFrom').value;
+        const to = document.getElementById('repTo').value || today();
+        const r = RTAdmin.computeIncomeReport(from || null, to);
+        window._lastRep = r;
+        document.getElementById('repOut').innerHTML = `
+          <b>من</b> ${r.from} <b>إلى</b> ${r.to}<br/>
+          إجمالي التحصيل: <b>${money(r.gross)}</b><br/>
+          تحاليل خارجية (−): ${money(r.external)}<br/>
+          مصروفات تشغيل (−): ${money(r.opex)}<br/>
+          <b>الصافي التشغيلي:</b> ${money(r.net)}<br/>
+          حصة المعمل (${r.labPct}%): <b>${money(r.labShare)}</b><br/>
+          حصة CEO (${r.ceoPct}%): <b>${money(r.ceoShare)}</b><br/>
+          <span class="note">مرجع إجمالي المرتبات الشهرية للموظفين النشطين: ${money(r.salariesMonthlyRef)}</span>
+        `;
+      }
+
+      function printReport() {
+        if (!window._lastRep) runReport();
+        const r = window._lastRep;
+        const w = window.open('', '_blank');
+        w.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>تقرير الدخل</title>
+          <style>body{font-family:Arial;padding:24px} table{width:100%;border-collapse:collapse} td,th{border:1px solid #ccc;padding:8px;text-align:right} h1{color:#800000;text-align:center}</style></head><body>
+          <h1>RT LAB — الدخل والتقسيم</h1>
+          <p style="text-align:center">${r.from} → ${r.to}</p>
+          <table>
+            <tr><th>البند</th><th>المبلغ</th></tr>
+            <tr><td>إجمالي التحصيل</td><td>${money(r.gross)}</td></tr>
+            <tr><td>تحاليل خارجية</td><td>${money(r.external)}</td></tr>
+            <tr><td>مصروفات تشغيل</td><td>${money(r.opex)}</td></tr>
+            <tr><td><b>الصافي</b></td><td><b>${money(r.net)}</b></td></tr>
+            <tr><td>حصة المعمل ${r.labPct}%</td><td>${money(r.labShare)}</td></tr>
+            <tr><td>حصة CEO ${r.ceoPct}%</td><td>${money(r.ceoShare)}</td></tr>
+          </table>
+          <p>مرجع المرتبات الشهرية: ${money(r.salariesMonthlyRef)}</p>
+          <script>window.print()<\/script></body></html>`);
+        w.document.close();
+      }
+
+      function saveSettings() {
+        const lab = Number(document.getElementById('labPct').value) || 0;
+        RTAdmin.updateSettings({
+          labSharePct: lab,
+          ceoSharePct: Number(document.getElementById('ceoPct').value) || (100 - lab),
+          branch: document.getElementById('branchName').value
+        });
+        alert('تم حفظ الإعدادات');
+        refresh();
+      }
+
+      function seed() {
+        RTAdmin.seedDemo();
+        refresh();
+        alert('تم تحميل بيانات تجريبية');
+      }
+
+      function init() {
+        document.querySelectorAll('.side button[data-page]').forEach(b => {
+          b.onclick = () => go(b.dataset.page);
+        });
+        document.getElementById('payDate').value = today();
+        document.getElementById('exDate').value = today();
+        document.getElementById('attDate').value = today();
+        document.getElementById('repFrom').value = today().slice(0, 7) + '-01';
+        document.getElementById('repTo').value = today();
+        if (!RTAdmin.load().payments.length) RTAdmin.seedDemo();
+        refresh();
+      }
+
+      return {
+        init, seed, addPay, addEx, addInv, addEmp, addAtt,
+        runReport, printReport, saveSettings
+      };
+    })();
+
+    document.addEventListener('DOMContentLoaded', App.init);
+  </script>
+</body>
+</html>

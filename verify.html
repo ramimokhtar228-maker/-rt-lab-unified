@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RT LAB — التحقق من التقرير</title>
+  <meta name="rt-supabase-url" content="https://jttimbdwolkazgxydmob.supabase.co" />
+  <meta name="rt-supabase-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0dGltYmR3b2xrYXpneHlkbW9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NzI4MTksImV4cCI6MjEwMjU0ODgxOX0.KBT82Bm58NOXx9STdju1-bjoUjzXWTwFEiahje0hXv4" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/portal-engine.js"></script>
+  <style>
+    :root { --primary:#800000; --secondary:#1a237e; --bg:#f4f6f9; --border:#e2e8f0; }
+    * { box-sizing:border-box; font-family:'Segoe UI',Tahoma,Arial,sans-serif; }
+    body { margin:0; background:var(--bg); color:#1e293b; min-height:100vh; }
+    .hero {
+      background:linear-gradient(135deg,var(--primary),var(--secondary));
+      color:#fff; padding:28px 18px; text-align:center;
+    }
+    .hero h1 { margin:0; font-size:22px; }
+    .hero p { margin:8px 0 0; font-size:13px; opacity:.92; }
+    .wrap { max-width:720px; margin:0 auto; padding:20px 16px 40px; }
+    .card {
+      background:#fff; border:1px solid var(--border); border-radius:14px;
+      padding:18px; box-shadow:0 4px 16px rgba(0,0,0,.05);
+    }
+    label { font-size:12px; font-weight:800; color:#64748b; display:block; margin-bottom:6px; }
+    input {
+      width:100%; padding:12px 14px; border:1.5px solid var(--border); border-radius:10px;
+      font-size:14px; font-family:ui-monospace,monospace; direction:ltr; text-align:left;
+    }
+    .btn {
+      width:100%; margin-top:12px; border:0; border-radius:10px; padding:12px;
+      font-weight:900; font-size:15px; cursor:pointer; color:#fff; background:var(--primary);
+      font-family:inherit;
+    }
+    .note { font-size:12px; color:#64748b; margin-top:12px; line-height:1.5; text-align:center; }
+    .err {
+      display:none; background:#fef2f2; border:1px solid #fca5a5; color:#991b1b;
+      padding:10px 12px; border-radius:8px; font-size:13px; margin-top:12px;
+    }
+    .ok {
+      display:none; margin-top:16px; border:1px solid #6ee7b7; background:#ecfdf5;
+      border-radius:12px; padding:14px;
+    }
+    .ok h2 { margin:0 0 8px; font-size:16px; color:#065f46; }
+    .meta { font-size:13px; line-height:1.7; }
+    .meta b { color:#334155; }
+    table { width:100%; border-collapse:collapse; font-size:12px; direction:ltr; text-align:left; margin-top:12px; background:#fff; }
+    th { background:#800000; color:#fff; padding:6px 8px; }
+    td { border:1px solid #e2e8f0; padding:6px 8px; }
+    .badge { display:inline-block; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:800; background:#dcfce7; color:#166534; }
+    iframe { width:100%; min-height:60vh; border:1px solid var(--border); border-radius:8px; margin-top:12px; background:#fff; }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <h1>RT LAB</h1>
+    <p>التحقق من التقرير الطبي · Secure Token فقط</p>
+  </div>
+
+  <div class="wrap">
+    <div class="card">
+      <label>رمز التحقق (Token) من التقرير أو QR</label>
+      <input id="token" placeholder="الصق الرمز هنا" autocomplete="off" />
+      <button type="button" class="btn" id="btnGo">تحقق</button>
+      <div class="err" id="err"></div>
+      <p class="note">لا يُستخدم رقم الطلب وحده للوصول العام. الرمز طويل وعشوائي ويظهر على التقرير المُصدَر.</p>
+    </div>
+
+    <div class="ok" id="result">
+      <h2>تقرير موثّق</h2>
+      <div class="meta" id="meta"></div>
+      <div id="tables"></div>
+      <div id="htmlHost"></div>
+    </div>
+  </div>
+
+  <script>
+    let sb = null;
+    try {
+      const url = document.querySelector('meta[name="rt-supabase-url"]')?.content;
+      const key = document.querySelector('meta[name="rt-supabase-key"]')?.content;
+      if (url && key && window.supabase) sb = supabase.createClient(url, key);
+    } catch (e) {}
+
+    async function runVerify() {
+      const token = document.getElementById('token').value.trim();
+      const err = document.getElementById('err');
+      const box = document.getElementById('result');
+      err.style.display = 'none';
+      box.style.display = 'none';
+
+      const res = await RTPortal.resolveToken(token, sb);
+      if (!res.ok) {
+        err.style.display = 'block';
+        err.textContent = res.error;
+        return;
+      }
+      const r = res.report;
+      box.style.display = 'block';
+      document.getElementById('meta').innerHTML = `
+        <div><b>Report ID:</b> ${r.reportId || '—'}</div>
+        <div><b>Order:</b> ${r.orderId || '—'}</div>
+        <div><b>Patient:</b> ${r.patientName || '—'}</div>
+        <div><b>Age / Sex:</b> ${r.age || '—'} / ${r.sex || '—'}</div>
+        <div><b>Status:</b> <span class="badge">${r.status || 'RELEASED'}</span> · Mode: ${r.mode || '—'}</div>
+        <div><b>Released:</b> ${r.releasedAt ? new Date(r.releasedAt).toLocaleString() : '—'}</div>
+        <div><b>Source:</b> ${r.source || 'local'}</div>
+      `;
+      const tables = document.getElementById('tables');
+      if (r.blocks && r.blocks.length) {
+        tables.innerHTML = r.blocks.map(b => {
+          const rows = (b.lines || []).map(l =>
+            `<tr><td>${l.name || l.param}</td><td><b>${l.value || '—'}</b> ${l.flag && l.flag !== 'N' && l.flag !== 'NA' ? '('+l.flag+')' : ''}</td><td>${l.unit || ''}</td><td>${l.ref || ''}</td></tr>`
+          ).join('');
+          return `<h3 style="margin:14px 0 6px;font-size:14px;color:#800000;">${b.name || b.test_code}</h3>
+            <table><thead><tr><th>Parameter</th><th>Result</th><th>Unit</th><th>Reference</th></tr></thead><tbody>${rows}</tbody></table>`;
+        }).join('');
+      } else tables.innerHTML = r.summary ? `<p>${r.summary}</p>` : '';
+
+      const host = document.getElementById('htmlHost');
+      host.innerHTML = '';
+      if (r.html) {
+        const iframe = document.createElement('iframe');
+        iframe.title = 'Report';
+        host.appendChild(iframe);
+        const doc = iframe.contentDocument;
+        doc.open(); doc.write(r.html); doc.close();
+      }
+    }
+
+    document.getElementById('btnGo').onclick = runVerify;
+    document.getElementById('token').addEventListener('keydown', e => {
+      if (e.key === 'Enter') runVerify();
+    });
+
+    const fromUrl = RTPortal.parseTokenFromUrl();
+    if (fromUrl) {
+      document.getElementById('token').value = fromUrl;
+      runVerify();
+    }
+  </script>
+</body>
+</html>

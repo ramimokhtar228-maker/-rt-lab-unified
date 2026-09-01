@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RT LAB V2 — Result Entry</title>
+  <meta name="rt-supabase-url" content="https://jttimbdwolkazgxydmob.supabase.co" />
+  <meta name="rt-supabase-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0dGltYmR3b2xrYXpneHlkbW9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NzI4MTksImV4cCI6MjEwMjU0ODgxOX0.KBT82Bm58NOXx9STdju1-bjoUjzXWTwFEiahje0hXv4" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/result-engine.js"></script>
+  <style>
+    :root {
+      --primary: #800000; --secondary: #1a237e; --bg: #f4f6f9; --card: #fff;
+      --border: #e2e8f0; --ok: #2e7d32; --abn: #ef6c00; --crit: #c62828;
+    }
+    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Arial, sans-serif; }
+    body { margin: 0; background: var(--bg); color: #1e293b; }
+    .top {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: #fff; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+    }
+    .top h1 { margin: 0; font-size: 18px; }
+    .top .sub { font-size: 12px; opacity: .9; }
+    .wrap { max-width: 960px; margin: 0 auto; padding: 16px; }
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 14px 16px; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    }
+    .card h2 { margin: 0 0 10px; font-size: 15px; color: var(--primary); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+    label { font-size: 11px; font-weight: 700; color: #64748b; display: block; margin-bottom: 4px; }
+    input, select, textarea {
+      width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 13px; font-family: inherit; background: #fff;
+    }
+    .btn {
+      border: 0; border-radius: 8px; padding: 9px 14px; font-weight: 800; font-size: 13px;
+      cursor: pointer; font-family: inherit; color: #fff; background: var(--primary);
+    }
+    .btn:hover { opacity: .92; }
+    .btn-sec { background: var(--secondary); }
+    .btn-ok { background: var(--ok); }
+    .btn-warn { background: var(--abn); }
+    .btn-danger { background: var(--crit); }
+    .btn-ghost { background: #e2e8f0; color: #334155; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      border: 1px solid var(--border); background: #f8fafc; border-radius: 999px;
+      padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer;
+    }
+    .chip.on { background: #fce7f3; border-color: #f9a8d4; color: var(--primary); }
+    table.entry { width: 100%; border-collapse: collapse; font-size: 13px; direction: ltr; text-align: left; }
+    table.entry th { background: #f1f5f9; padding: 8px; border-bottom: 1px solid var(--border); }
+    table.entry td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    table.entry input { max-width: 110px; direction: ltr; }
+    .flag-ok { color: var(--ok); font-weight: 800; font-size: 11px; margin-left: 4px; }
+    .flag-abn { color: var(--abn); font-weight: 800; font-size: 11px; margin-left: 4px; }
+    .flag-crit { color: var(--crit); font-weight: 900; font-size: 11px; margin-left: 4px; animation: blink 1s infinite; }
+    .flag-pos { color: #6a1b9a; font-weight: 800; font-size: 11px; }
+    .flag-na { color: #94a3b8; font-size: 11px; }
+    @keyframes blink { 50% { opacity: .45; } }
+    .re-title { background: var(--primary); color: #fff; padding: 8px; text-align: center; border-radius: 6px; font-size: 14px; margin: 12px 0 8px; }
+    .re-table { width: 100%; border-collapse: collapse; direction: ltr; font-size: 13px; }
+    .re-table th { background: var(--primary); color: #fff; padding: 7px; }
+    .re-table td { border: 1px solid #ddd; padding: 6px 8px; }
+    .note { font-size: 12px; color: #64748b; line-height: 1.5; }
+    .alert { background: #fff7ed; border: 1px solid #fdba74; color: #9a3412; padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 10px; }
+    .alert.crit { background: #fef2f2; border-color: #fca5a5; color: #991b1b; }
+    .status { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; background: #e0e7ff; color: #3730a3; }
+    #toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: #0f172a; color: #fff; padding: 10px 16px; border-radius: 8px;
+      font-size: 13px; display: none; z-index: 50;
+    }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <div>
+      <h1>RT LAB V2 — Result Entry Engine</h1>
+      <div class="sub">M2 · قوالب ديناميكية · Reference حسب الجنس · Flags · إصدارات</div>
+    </div>
+    <div class="sub" id="cloudStatus">محلي (Local)</div>
+  </div>
+
+  <div class="wrap">
+    <div class="card">
+      <h2>1) بيانات المريض والطلب</h2>
+      <div class="grid">
+        <div>
+          <label>اسم المريض</label>
+          <input id="pName" value="أحمد محمد" />
+        </div>
+        <div>
+          <label>الجنس *</label>
+          <select id="pSex">
+            <option value="Male">ذكر Male</option>
+            <option value="Female">أنثى Female</option>
+          </select>
+        </div>
+        <div>
+          <label>السن *</label>
+          <input id="pAge" type="number" min="0" value="43" />
+        </div>
+        <div>
+          <label>وحدة السن</label>
+          <select id="pAgeUnit">
+            <option value="سنة">سنة</option>
+            <option value="شهر">شهر</option>
+            <option value="يوم">يوم</option>
+          </select>
+        </div>
+        <div>
+          <label>رقم الطلب</label>
+          <input id="orderId" value="RT-2026-DEMO01" />
+        </div>
+        <div>
+          <label>تاريخ/وقت السحب</label>
+          <input id="drawAt" type="datetime-local" />
+        </div>
+      </div>
+      <p class="note" style="margin-top:8px;">الجنس والسن يحددان الـ Reference تلقائياً (مثال: Hb ذكر ≠ أنثى).</p>
+    </div>
+
+    <div class="card">
+      <h2>2) اختر التحاليل / البروفايلات</h2>
+      <div class="chips" id="testChips"></div>
+    </div>
+
+    <div class="card">
+      <h2>3) إدخال النتائج <span class="status" id="entryStatus">مسودة</span></h2>
+      <div id="criticalBox" class="alert crit" style="display:none;"></div>
+      <div id="entryForms"></div>
+      <div class="actions">
+        <button type="button" class="btn btn-ok" onclick="App.recalc()">إعادة حساب + Flags</button>
+        <button type="button" class="btn btn-sec" onclick="App.saveDraft()">حفظ مسودة</button>
+        <button type="button" class="btn" onclick="App.submitVerification()">إرسال للمراجعة</button>
+        <button type="button" class="btn btn-danger" onclick="App.clearValues()">مسح القيم</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>4) معاينة التقرير (من البيانات — ليس يدوي)</h2>
+      <div id="preview" style="direction:ltr; text-align:left;"></div>
+      <div class="actions">
+        <button type="button" class="btn btn-ghost" onclick="App.printPreview()">طباعة / PDF</button>
+      </div>
+      <p class="note" id="commentOut"></p>
+    </div>
+
+    <div class="card">
+      <h2>سجل الإصدارات (محلي)</h2>
+      <pre id="versionLog" class="note" style="white-space:pre-wrap;background:#f8fafc;padding:10px;border-radius:8px;max-height:180px;overflow:auto;"></pre>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    const App = (() => {
+      const catalog = RTResultEngine.getDefaultCatalog();
+      let selected = ['CBC'];
+      let version = 1;
+      let history = [];
+
+      function toast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.style.display = 'block';
+        setTimeout(() => { el.style.display = 'none'; }, 2200);
+      }
+
+      function ageText() {
+        const n = document.getElementById('pAge').value;
+        const u = document.getElementById('pAgeUnit').value;
+        return n ? (n + ' ' + u) : '';
+      }
+
+      function patientCtx() {
+        return {
+          sex: document.getElementById('pSex').value,
+          ageText: ageText(),
+          name: document.getElementById('pName').value,
+          orderId: document.getElementById('orderId').value,
+          drawAt: document.getElementById('drawAt').value
+        };
+      }
+
+      function renderChips() {
+        const box = document.getElementById('testChips');
+        box.innerHTML = catalog.definitions
+          .filter(d => d.test_type === 'profile' || d.code === 'GLU' || d.code === 'Hb')
+          .map(d => `<button type="button" class="chip ${selected.includes(d.code) ? 'on' : ''}" data-code="${d.code}">${d.code} — ${d.name_en}</button>`)
+          .join('');
+        box.querySelectorAll('.chip').forEach(btn => {
+          btn.onclick = () => {
+            const c = btn.dataset.code;
+            if (selected.includes(c)) selected = selected.filter(x => x !== c);
+            else selected.push(c);
+            renderChips();
+            renderForms();
+          };
+        });
+      }
+
+      function readValues() {
+        const valuesByTest = {};
+        selected.forEach(code => {
+          const vals = {};
+          document.querySelectorAll(`[data-test="${code}"][data-param]`).forEach(inp => {
+            vals[inp.dataset.param] = inp.value;
+          });
+          valuesByTest[code] = vals;
+        });
+        return valuesByTest;
+      }
+
+      function renderForms() {
+        const host = document.getElementById('entryForms');
+        if (!selected.length) {
+          host.innerHTML = '<p class="note">اختر تحليلاً واحداً على الأقل.</p>';
+          return;
+        }
+        host.innerHTML = selected.map(code => {
+          const def = catalog.definitions.find(d => d.code === code) || { name_en: code };
+          let params = catalog.parameters[code];
+          if (!params) {
+            params = [{ param_code: code, name_en: def.name_en, unit: def.unit || '', sort_order: 10 }];
+          }
+          params = params.slice().sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+          const rows = params.map(p => {
+            const calc = p.is_calculated ? ' <span class="note">(محسوب)</span>' : '';
+            return `<tr>
+              <td>${p.name_en}${calc}</td>
+              <td><input data-test="${code}" data-param="${p.param_code}" ${p.is_calculated ? 'readonly style="background:#f1f5f9"' : ''} placeholder="—" /></td>
+              <td>${p.unit || ''}</td>
+              <td class="ref-cell" data-ref-for="${code}.${p.param_code}">—</td>
+              <td class="flag-cell" data-flag-for="${code}.${p.param_code}"></td>
+            </tr>`;
+          }).join('');
+          return `<div style="margin-bottom:16px;">
+            <div style="font-weight:800;color:var(--primary);margin-bottom:6px;">${def.name_en} (${code})</div>
+            <table class="entry">
+              <thead><tr><th>Parameter</th><th>Result</th><th>Unit</th><th>Reference</th><th>Flag</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>`;
+        }).join('');
+
+        host.querySelectorAll('input[data-param]').forEach(inp => {
+          inp.addEventListener('input', () => {
+            if (inp.dataset.test === 'CBC' && ['Hb', 'RBC', 'HCT'].includes(inp.dataset.param)) {
+              autoCBC(inp.dataset.test);
+            }
+            if (inp.dataset.test === 'LIPID' && ['CHOL', 'TG', 'HDL'].includes(inp.dataset.param)) {
+              autoLipid(inp.dataset.test);
+            }
+            softFlags();
+          });
+        });
+        softFlags();
+      }
+
+      function autoCBC(code) {
+        const vals = {};
+        document.querySelectorAll(`input[data-test="${code}"]`).forEach(i => { vals[i.dataset.param] = i.value; });
+        const c = RTResultEngine.calcCBC(vals);
+        ['MCV', 'MCH', 'MCHC'].forEach(k => {
+          const el = document.querySelector(`input[data-test="${code}"][data-param="${k}"]`);
+          if (el && c[k] != null) el.value = c[k];
+        });
+      }
+
+      function autoLipid(code) {
+        const vals = {};
+        document.querySelectorAll(`input[data-test="${code}"]`).forEach(i => { vals[i.dataset.param] = i.value; });
+        const c = RTResultEngine.calcLipid(vals);
+        ['LDL', 'VLDL', 'RATIO'].forEach(k => {
+          const el = document.querySelector(`input[data-test="${code}"][data-param="${k}"]`);
+          if (el && c[k] != null) el.value = c[k];
+        });
+      }
+
+      function softFlags() {
+        const ctx = patientCtx();
+        const valuesByTest = readValues();
+        selected.forEach(code => {
+          const block = RTResultEngine.evaluateTest({
+            testCode: code,
+            values: valuesByTest[code] || {},
+            sex: ctx.sex,
+            ageText: ctx.ageText,
+            definitions: catalog.definitions,
+            parameters: catalog.parameters,
+            ranges: catalog.ranges
+          });
+          block.lines.forEach(l => {
+            const refEl = document.querySelector(`[data-ref-for="${code}.${l.param_code}"]`);
+            const flagEl = document.querySelector(`[data-flag-for="${code}.${l.param_code}"]`);
+            if (refEl) refEl.textContent = l.ref_text || '—';
+            if (flagEl) flagEl.innerHTML = l.value_text === '' ? '' : `<span class="${l.flag_class}">${l.flag}</span>`;
+          });
+        });
+      }
+
+      function evaluateAll() {
+        const ctx = patientCtx();
+        return RTResultEngine.evaluateOrder({
+          testCodes: selected,
+          valuesByTest: readValues(),
+          sex: ctx.sex,
+          ageText: ctx.ageText,
+          definitions: catalog.definitions,
+          parameters: catalog.parameters,
+          ranges: catalog.ranges,
+          version,
+          enteredBy: 'Tech'
+        });
+      }
+
+      function recalc() {
+        selected.forEach(code => {
+          if (code === 'CBC') autoCBC(code);
+          if (code === 'LIPID') autoLipid(code);
+        });
+        const blocks = evaluateAll();
+        softFlags();
+        const crit = blocks.filter(b => b.has_critical);
+        const box = document.getElementById('criticalBox');
+        if (crit.length) {
+          box.style.display = 'block';
+          box.textContent = '⚠ CRITICAL values present — notify supervisor before release.';
+        } else box.style.display = 'none';
+
+        document.getElementById('preview').innerHTML =
+          headerHtml() + blocks.map(b => RTResultEngine.renderBlockTable(b)).join('');
+        document.getElementById('commentOut').textContent =
+          'Laboratory comment (level 2): ' + RTResultEngine.buildLabComments(blocks);
+        toast('تم التحديث');
+      }
+
+      function headerHtml() {
+        const c = patientCtx();
+        return `<div style="border-bottom:3px solid #800000;padding-bottom:8px;margin-bottom:12px;text-align:center;">
+          <div style="font-size:18px;font-weight:900;color:#800000;">RT LAB Clinical Laboratories</div>
+          <div style="font-size:12px;color:#1a237e;">Laboratory Medical Report — V2 Engine</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;border:1px solid #800000;padding:10px;margin-bottom:12px;font-size:13px;">
+          <div style="grid-column:1/-1;font-weight:900;border-bottom:1px solid #ccc;padding-bottom:4px;">${c.name || '—'}</div>
+          <div><b>Age:</b> ${c.ageText || '—'}</div>
+          <div><b>Sex:</b> ${c.sex}</div>
+          <div><b>Order:</b> ${c.orderId}</div>
+          <div><b>Sample:</b> ${c.drawAt || '—'}</div>
+          <div><b>Version:</b> ${version}</div>
+          <div><b>Status:</b> PREVIEW</div>
+        </div>`;
+      }
+
+      function saveDraft() {
+        recalc();
+        const payload = {
+          patient: patientCtx(),
+          selected: selected.slice(),
+          values: readValues(),
+          evaluated: evaluateAll(),
+          version,
+          savedAt: new Date().toISOString(),
+          status: 'DRAFT'
+        };
+        localStorage.setItem('rt_v2_result_draft', JSON.stringify(payload));
+        document.getElementById('entryStatus').textContent = 'مسودة محفوظة';
+        toast('حُفظت المسودة محلياً');
+      }
+
+      function submitVerification() {
+        recalc();
+        const blocks = evaluateAll();
+        if (blocks.some(b => b.has_critical) && !confirm('توجد قيم حرجة. متابعة الإرسال للمراجعة؟')) return;
+        version += 1;
+        const payload = {
+          patient: patientCtx(),
+          selected: selected.slice(),
+          values: readValues(),
+          evaluated: blocks,
+          version,
+          savedAt: new Date().toISOString(),
+          status: 'VERIFICATION',
+          lab_comment: RTResultEngine.buildLabComments(blocks)
+        };
+        history.unshift(payload);
+        localStorage.setItem('rt_v2_result_history', JSON.stringify(history.slice(0, 20)));
+        localStorage.setItem('rt_v2_result_draft', JSON.stringify(payload));
+        document.getElementById('entryStatus').textContent = 'بانتظار المراجعة v' + version;
+        document.getElementById('versionLog').textContent = history.map(h =>
+          `${h.savedAt} · v${h.version} · ${h.status} · ${h.selected.join(',')}`
+        ).join('\n');
+        toast('أُرسل للمراجعة · version ' + version);
+      }
+
+      function clearValues() {
+        if (!confirm('مسح كل القيم المدخلة؟')) return;
+        document.querySelectorAll('input[data-param]').forEach(i => { if (!i.readOnly) i.value = ''; });
+        document.querySelectorAll('input[readonly]').forEach(i => { i.value = ''; });
+        softFlags();
+        document.getElementById('preview').innerHTML = '';
+        toast('تم المسح');
+      }
+
+      function printPreview() {
+        recalc();
+        const w = window.open('', '_blank');
+        w.document.write(`<!DOCTYPE html><html><head><title>Report</title>
+          <style>body{font-family:Arial;padding:24px;} table{width:100%;border-collapse:collapse;} th,td{border:1px solid #ccc;padding:6px;} th{background:#800000;color:#fff;}</style>
+          </head><body>${document.getElementById('preview').innerHTML}
+          <p style="font-size:12px;">${document.getElementById('commentOut').textContent}</p>
+          <script>window.print()<\/script></body></html>`);
+        w.document.close();
+      }
+
+      function init() {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById('drawAt').value = now.toISOString().slice(0, 16);
+        try {
+          const h = JSON.parse(localStorage.getItem('rt_v2_result_history') || '[]');
+          if (Array.isArray(h)) history = h;
+          document.getElementById('versionLog').textContent = history.map(x =>
+            `${x.savedAt} · v${x.version} · ${x.status}`
+          ).join('\n') || 'لا إصدارات بعد';
+        } catch (e) {}
+        renderChips();
+        renderForms();
+        // optional cloud ping
+        try {
+          const url = document.querySelector('meta[name="rt-supabase-url"]')?.content;
+          const key = document.querySelector('meta[name="rt-supabase-key"]')?.content;
+          if (url && key && window.supabase) {
+            const sb = supabase.createClient(url, key);
+            sb.from('test_definitions').select('code').limit(1).then(({ error }) => {
+              document.getElementById('cloudStatus').textContent = error
+                ? 'محلي — نفّذ SQL الخاص بـ M1 لربط الكتالوج'
+                : 'متصل بـ Supabase';
+            });
+          }
+        } catch (e) {}
+      }
+
+      return { init, recalc, saveDraft, submitVerification, clearValues, printPreview };
+    })();
+
+    document.addEventListener('DOMContentLoaded', App.init);
+  </script>
+</body>
+</html>

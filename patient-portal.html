@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RT LAB — بوابة المريض</title>
+  <script src="../js/portal-engine.js"></script>
+  <style>
+    :root { --primary:#800000; --secondary:#1a237e; --bg:#f0f2f5; --border:#e2e8f0; }
+    * { box-sizing:border-box; font-family:'Segoe UI',Tahoma,Arial,sans-serif; }
+    body { margin:0; background:var(--bg); color:#1e293b; }
+    .top {
+      background:linear-gradient(135deg,var(--primary),var(--secondary));
+      color:#fff; padding:20px 16px; text-align:center;
+    }
+    .top h1 { margin:0; font-size:20px; }
+    .top p { margin:6px 0 0; font-size:13px; opacity:.92; }
+    .wrap { max-width:560px; margin:0 auto; padding:18px 14px 40px; }
+    .card {
+      background:#fff; border:1px solid var(--border); border-radius:14px;
+      padding:16px; margin-bottom:12px;
+    }
+    .card h2 { margin:0 0 8px; font-size:15px; color:var(--primary); }
+    .btn {
+      display:block; text-align:center; text-decoration:none;
+      background:var(--primary); color:#fff; font-weight:800; padding:12px;
+      border-radius:10px; margin-top:8px; border:0; width:100%; cursor:pointer; font-size:14px;
+      font-family:inherit;
+    }
+    .btn-sec { background:var(--secondary); }
+    .btn-ghost { background:#f1f5f9; color:#334155; }
+    .note { font-size:12px; color:#64748b; line-height:1.55; }
+    input {
+      width:100%; padding:11px 12px; border:1px solid var(--border); border-radius:10px;
+      font-size:14px; margin-top:6px; direction:ltr; text-align:left; font-family:ui-monospace,monospace;
+    }
+    label { font-size:12px; font-weight:800; color:#64748b; }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <h1>RT LAB</h1>
+    <p>بوابة المريض · نتيجتي · التحقق من التقرير</p>
+  </div>
+
+  <div class="wrap">
+    <div class="card">
+      <h2>نتيجتي / التحقق من التقرير</h2>
+      <p class="note">أدخل رمز التحقق (Token) الموجود على التقرير أو امسح QR.</p>
+      <label>Token</label>
+      <input id="token" placeholder="رمز التحقق" />
+      <button type="button" class="btn" id="go">عرض النتيجة</button>
+    </div>
+
+    <div class="card">
+      <h2>خدمات أخرى</h2>
+      <p class="note">الحجز والعضوية من برنامج الحجوزات — البوابة هنا للنتائج الآمنة فقط.</p>
+      <a class="btn btn-sec" href="verify.html">صفحة التحقق</a>
+      <a class="btn btn-ghost" href="booking-to-lis-v2.html">للإدارة: جسر الحجز (تجريبي)</a>
+    </div>
+
+    <p class="note" style="text-align:center;">الوصول العام لا يعتمد على رقم الطلب مباشرة — فقط Token عشوائي بعد إصدار التقرير.</p>
+  </div>
+
+  <script>
+    document.getElementById('go').onclick = function () {
+      const t = document.getElementById('token').value.trim();
+      if (!t) return alert('أدخل Token');
+      location.href = 'verify.html?token=' + encodeURIComponent(t);
+    };
+    document.getElementById('token').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('go').click();
+    });
+  </script>
+</body>
+</html>
